@@ -14,15 +14,6 @@ const int RELAY_3 = 24;
 const int MAGNET_4 = 5;
 const int RELAY_4 = 22;
 
-// Variables used in Serial input reading example
-const byte numChars = 32;
-char receivedChars[numChars];   // an array to store the received data
-boolean newData = false;
-
-// Variables used in parse data example
-char tempChars[numChars];
-char messageFromPC[numChars] = {0};
-
 void setup() {
  Serial.begin(9600);
  pinMode(MAGNET_1, INPUT_PULLUP);
@@ -36,21 +27,11 @@ void setup() {
 }
 
 void loop() {
-
- //recvWithEndMarker();
+ // Force elevators to rotate if input is given
+ if (Serial.available()) {
+  rotate();
+ }
   
- // Force elevator to rotate
- //if(newData == true) {
- // rotate();
- //}
- 
- //showNewData();
-
-  if (Serial.available()) {
-    Serial.println(Serial.readString());
-  }
-  
-
  // Sensor logic: If the magnets are touching, turn power off. Otherwise, turn power on.
  elevatorOne();
  elevatorTwo();
@@ -58,105 +39,94 @@ void loop() {
  elevatorFour();
 }
 
-// Force elevator to rotate
+// Force elevators to rotate
 void rotate() {
- 
- // Rotate time per elevator
- int rotateOne;
- int rotateTwo;
- int rotateThree;
- int rotateFour;
- 
- // Store input
- //Serial.print("Checkpoint #1: ");
- //Serial.println(receivedChars);
+ // Grab input
+ // Input MUST be in the following format: #;#;#;#;
+ // Where # can be any integer
+ String input = Serial.readString();
 
- //Serial.print("Checkpoint #2: ");
- //Serial.println(strstr(receivedChars,";"));
+ // Initialize counters and array to store delay time
+ int substrCounter = 0;
+ int arrayCounter = 0;
+ int delays[4];
 
-// if(strstr(receivedChars,";") > 0) {
-//  
-// }
-// else {
-//  int rotateAll = (receivedChars[0] - 48) * 1000;
-//    Serial.println("Check point #3");
-//    Serial.println(rotateAll);
-// }
-  
- for (int i = 0; i < sizeof(receivedChars); i++) {
-
-  // Case where input does not have a delimiter and is 2 digits
-  if(receivedChars[2] == -1) {
-    int rotateAll = ((receivedChars[0] - 48) * 10 + (receivedChars[1] - 48)) * 1000;
-    Serial.println("Check point #2");
-    Serial.println(rotateAll);
-    break;
+ // Parse input and store
+ for (int i = 0; i < input.length(); i++) {
+  if (input.substring(i, i+1) == ";") {
+   delays[arrayCounter] = input.substring(substrCounter, i).toInt();
+   substrCounter = i + 1;
+   arrayCounter++;
   }
-// }
+ }
 
-// if (input[0] != -1) {
-//  while (n >= 0) {
-//   input[n] = -1;
-//   n--;
-//  }
-// }
- 
-  //Serial.println(line);
-//  int delayTimeInSec = (Serial.read() - 48) * 1000;
-//  digitalWrite(RELAY_1, HIGH);
-//  digitalWrite(RELAY_2, HIGH);
-//  digitalWrite(RELAY_3, HIGH);
-//  digitalWrite(RELAY_4, HIGH);
-//  delay(delayTimeInSec);
-}
-}
+ // If all the delays are the same, rotate all elevators at once
+ // Else, rotate each elevator one by one
+ if(delays[0] == delays[1] && delays[0] == delays[2] && delays[0] == delays[3]) {
+  Serial.println("Starting all rotations...");
+  elevatorAllRotate(delays[0]);
+ }
+ else {
+  Serial.println("Starting individual rotations...");
+  elevatorOneRotate(delays[0]);
+  elevatorTwoRotate(delays[1]);
+  elevatorThreeRotate(delays[2]);
+  elevatorFourRotate(delays[3]);
+ }
 
-// Function grabbed from a forum to store input
-void recvWithEndMarker() {
-    static byte ndx = 0;
-    char endMarker = '\n';
-    char rc;
-    
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (rc != endMarker) {
-            receivedChars[ndx] = rc;
-            ndx++;
-            if (ndx >= numChars) {
-                ndx = numChars - 1;
-            }
-        }
-        else {
-            receivedChars[ndx] = '\0'; // terminate the string
-            ndx = 0;
-            newData = true;
-        }
-    }
+ // Debugging purposes
+ Serial.print("Input: ");
+ Serial.println(input);
+ Serial.print("Delay one: ");
+ Serial.println(delays[0]);
+ Serial.print("Delay two: ");
+ Serial.println(delays[1]);
+ Serial.print("Delay three: ");
+ Serial.println(delays[2]);
+ Serial.print("Delay four: ");
+ Serial.println(delays[3]);
 }
 
-void showNewData() {
-    if (newData == true) {
-        Serial.print("This just in ... ");
-        Serial.println(receivedChars);
-        newData = false;
-    }
+// Force all elevators to rotate for t seconds
+void elevatorAllRotate(int t) {
+  digitalWrite(RELAY_1, HIGH);
+  digitalWrite(RELAY_2, HIGH);
+  digitalWrite(RELAY_3, HIGH);
+  digitalWrite(RELAY_4, HIGH);
+  delay(t * 1000);
+  Serial.println("Completed all rotations!");
 }
 
-// Function grabbed from forum to parse data
-void parseData() {      // split the data into its parts
+// Force Elevator 1 to rotate for t seconds
+void elevatorOneRotate(int t) {
+  digitalWrite(RELAY_1, HIGH);
+  delay(t * 1000);
+  digitalWrite(RELAY_1, LOW);
+  Serial.println("Completed elevator one rotation!");
+}
 
-    char * strtokIndx; // this is used by strtok() as an index
+// Force Elevator 2 to rotate for t seconds
+void elevatorTwoRotate(int t) {
+  digitalWrite(RELAY_2, HIGH);
+  delay(t * 1000);
+  digitalWrite(RELAY_2, LOW);
+  Serial.println("Completed elevator two rotation!");
+}
 
-    strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    strcpy(messageFromPC, strtokIndx); // copy it to messageFromPC
- 
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    //integerFromPC = atoi(strtokIndx);     // convert this part to an integer
+// Force Elevator 3 to rotate for t seconds
+void elevatorThreeRotate(int t) {
+  digitalWrite(RELAY_3, HIGH);
+  delay(t * 1000);
+  digitalWrite(RELAY_3, LOW);
+  Serial.println("Completed elevator three rotation!");
+}
 
-    strtokIndx = strtok(NULL, ",");
-    //floatFromPC = atof(strtokIndx);     // convert this part to a float
-
+// Force Elevator 4 to rotate for t seconds
+void elevatorFourRotate(int t) {
+  digitalWrite(RELAY_4, HIGH);
+  delay(t * 1000);
+  digitalWrite(RELAY_4, LOW);
+  Serial.println("Completed elevator four rotation!");
 }
 
 // Sensor logic for Elevator 1
