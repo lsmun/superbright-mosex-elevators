@@ -1,18 +1,18 @@
 // Elevator 1
-const int MAGNET_1 = 2;
-const int RELAY_1 = 28;
+const int MAGNET_1 = 22;
+const int RELAY_1 = 24;
 
 // Elevator 2
-const int MAGNET_2 = 3;
-const int RELAY_2 = 26;
+const int MAGNET_2 = 28;
+const int RELAY_2 = 30;
 
 // Elevator 3
-const int MAGNET_3 = 4;
-const int RELAY_3 = 24;
+const int MAGNET_3 = 36;
+const int RELAY_3 = 38;
 
 // Elevator 4
-const int MAGNET_4 = 5;
-const int RELAY_4 = 22;
+const int MAGNET_4 = 46;
+const int RELAY_4 = 48;
 
 void setup() {
  Serial.begin(9600);
@@ -32,7 +32,9 @@ void loop() {
   rotate();
  }
   
- // Sensor logic: If the magnets are touching, turn power off. Otherwise, turn power on.
+ // Sensor logic
+ // If the magnets are touching, turn power off
+ // Else, turn power on.
  elevatorOne();
  elevatorTwo();
  elevatorThree();
@@ -43,7 +45,7 @@ void loop() {
 void rotate() {
  // Grab input
  // Input MUST be in the following format: #;#;#;#;
- // Where # can be any integer
+ // Where # can be any integer as seconds
  String input = Serial.readString();
 
  // Initialize counters and array to store delay time
@@ -60,6 +62,7 @@ void rotate() {
   }
  }
 
+ // Elevator rotation logic
  // If all the delays are the same, rotate all elevators at once
  // Else, rotate each elevator one by one
  if(delays[0] == delays[1] && delays[0] == delays[2] && delays[0] == delays[3]) {
@@ -68,10 +71,10 @@ void rotate() {
  }
  else {
   Serial.println("Starting individual rotations...");
-  elevatorOneRotate(delays[0]);
-  elevatorTwoRotate(delays[1]);
-  elevatorThreeRotate(delays[2]);
-  elevatorFourRotate(delays[3]);
+  if(delays[0] > 0) { elevatorOneRotate(delays[0]); }
+  if(delays[1] > 0) { elevatorTwoRotate(delays[1]); }
+  if(delays[2] > 0) { elevatorThreeRotate(delays[2]); }
+  if(delays[3] > 0) { elevatorFourRotate(delays[3]); }
  }
 
  // Debugging purposes
@@ -89,50 +92,46 @@ void rotate() {
 
 // Force all elevators to rotate for t seconds
 void elevatorAllRotate(int t) {
-  digitalWrite(RELAY_1, HIGH);
-  digitalWrite(RELAY_2, HIGH);
-  digitalWrite(RELAY_3, HIGH);
-  digitalWrite(RELAY_4, HIGH);
+  digitalWrite(RELAY_1, LOW);
+  digitalWrite(RELAY_2, LOW);
+  digitalWrite(RELAY_3, LOW);
+  digitalWrite(RELAY_4, LOW);
   delay(t * 1000);
   Serial.println("Completed all rotations!");
 }
 
 // Force Elevator 1 to rotate for t seconds
 void elevatorOneRotate(int t) {
-  digitalWrite(RELAY_1, HIGH);
-  delay(t * 1000);
   digitalWrite(RELAY_1, LOW);
+  delay(t * 1000);
   Serial.println("Completed elevator one rotation!");
 }
 
 // Force Elevator 2 to rotate for t seconds
 void elevatorTwoRotate(int t) {
-  digitalWrite(RELAY_2, HIGH);
-  delay(t * 1000);
   digitalWrite(RELAY_2, LOW);
+  delay(t * 1000);
   Serial.println("Completed elevator two rotation!");
 }
 
 // Force Elevator 3 to rotate for t seconds
 void elevatorThreeRotate(int t) {
-  digitalWrite(RELAY_3, HIGH);
-  delay(t * 1000);
   digitalWrite(RELAY_3, LOW);
+  delay(t * 1000);
   Serial.println("Completed elevator three rotation!");
 }
 
 // Force Elevator 4 to rotate for t seconds
 void elevatorFourRotate(int t) {
-  digitalWrite(RELAY_4, HIGH);
-  delay(t * 1000);
   digitalWrite(RELAY_4, LOW);
+  delay(t * 1000);
   Serial.println("Completed elevator four rotation!");
 }
 
 // Sensor logic for Elevator 1
 void elevatorOne() {
  int magnetState = digitalRead(MAGNET_1);
- if(magnetState == LOW) {
+ if(magnetState == HIGH) {
    digitalWrite(RELAY_1, LOW);
  } else {
    digitalWrite(RELAY_1, HIGH);
@@ -142,7 +141,7 @@ void elevatorOne() {
 // Sensor logic for Elevator 2
 void elevatorTwo() {
  int magnetState = digitalRead(MAGNET_2);
- if(magnetState == LOW) {
+ if(magnetState == HIGH) {
    digitalWrite(RELAY_2, LOW);
  } else {
    digitalWrite(RELAY_2, HIGH);
@@ -152,7 +151,7 @@ void elevatorTwo() {
 // Sensor logic for Elevator 3
 void elevatorThree() {
  int magnetState = digitalRead(MAGNET_3);
- if(magnetState == LOW) {
+ if(magnetState == HIGH) {
    digitalWrite(RELAY_3, LOW);
  } else {
    digitalWrite(RELAY_3, HIGH);
@@ -162,7 +161,7 @@ void elevatorThree() {
 // Sensor logic for Elevator 4
 void elevatorFour() {
  int magnetState = digitalRead(MAGNET_4);
- if(magnetState == LOW) {
+ if(magnetState == HIGH) {
    digitalWrite(RELAY_4, LOW);
  } else {
    digitalWrite(RELAY_4, HIGH);
