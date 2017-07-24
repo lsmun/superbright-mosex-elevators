@@ -29,18 +29,19 @@ void setup() {
 }
 
 void loop() {  
-  // Read and parse serial input if gien
+  // Read and parse serial input if given
   if (Serial.available()) {
     parseInput();
   }
 
-  // Force elevators to stop
+  // Force elevators to stop if emergencyStop is set to true
   if (emergencyStop == true) {
     digitalWrite(RELAY_1, HIGH);
     digitalWrite(RELAY_2, HIGH);
     digitalWrite(RELAY_3, HIGH);
     digitalWrite(RELAY_4, HIGH);
   }
+  // Else loop main sensor logic
   else {
     // Sensor logic
     // If the magnets are touching, turn power off
@@ -65,7 +66,7 @@ String readInput() {
 void parseInput() {
   String input = readInput();
 
-  // Stop elevators if input is "stop"
+  // Stop elevators if input is "stop" by setting emergencyStop to true
   if (input == "stop") {
     Serial.println("Stopping");
     emergencyStop = true;
