@@ -16,40 +16,66 @@ const int RELAY_4 = 48;
 
 bool emergencyStop = false;
 
+// SerialEvent
+String inputString = "";
+boolean stringComplete = false;
+
+// Start timer
+unsigned long currentMillis = 0;
+unsigned long previousMillis1 = 0;
+unsigned long previousMillis2 = 0;
+unsigned long previousMillis3 = 0;
+unsigned long previousMillis4 = 0;
+
+// Number of seconds to rotate pods
+int rotate1 = 0;
+int rotate2 = 0;
+int rotate3 = 0;
+int rotate4 = 0;
+
 void setup() {
   Serial.begin(9600);
+  
   pinMode(MAGNET_1, INPUT_PULLUP);
   pinMode(MAGNET_2, INPUT_PULLUP);
   pinMode(MAGNET_3, INPUT_PULLUP);
   pinMode(MAGNET_4, INPUT_PULLUP);
+  
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
   pinMode(RELAY_3, OUTPUT);
   pinMode(RELAY_4, OUTPUT);
+
+  inputString.reserve(200);
 }
 
-void loop() {  
-  // Read and parse serial input if given
-  if (Serial.available()) {
+void loop(void) {
+  currentMillis = millis();
+  
+  if (stringComplete) {
     parseInput();
+    inputString = "";
+    stringComplete = false;
   }
-
-  // Force elevators to stop if emergencyStop is set to true
-  if (emergencyStop == true) {
-    digitalWrite(RELAY_1, HIGH);
-    digitalWrite(RELAY_2, HIGH);
-    digitalWrite(RELAY_3, HIGH);
-    digitalWrite(RELAY_4, HIGH);
-  }
-  // Else loop main sensor logic
   else {
-    // Sensor logic
-    // If the magnets are touching, turn power off
-    // Else, turn power on.
     elevatorOne();
     elevatorTwo();
     elevatorThree();
     elevatorFour();
+  }
+}
+
+void serialEvent() {  
+  while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read();
+    // add it to the inputString:
+    inputString += inChar;
+    // if the incoming character is a newline, set a flag so the main loop can
+    // do something about it:
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
   }
 }
 
@@ -64,25 +90,22 @@ String readInput() {
 
 // Parse serial input
 void parseInput() {
-  String input = readInput();
-
   // Stop elevators if input is "stop" by setting emergencyStop to true
-  if (input == "stop") {
-    Serial.println("Stopping");
+  if (inputString == "stop") {
+    //Serial.println("Stopping");
     emergencyStop = true;
   }
   // Start elevators again if input is "start"
-  else if (input == "start") {
-    Serial.println("Starting");
+  else if (inputString == "start") {
+    //Serial.println("Starting");
     emergencyStop = false;
-    digitalWrite(RELAY_1, LOW);
-    digitalWrite(RELAY_2, LOW);
-    digitalWrite(RELAY_3, LOW);
-    digitalWrite(RELAY_4, LOW);
+  }
+  else if (inputString == "ping") {
+    Serial.println("PONG");
   }
   // Rotate elevators based on input in seconds
-  else if (input != "") {
-    rotate(input);
+  else if (inputString != "") {
+    rotate(inputString);
   }
 }
 
@@ -106,112 +129,134 @@ void rotate(String input) {
   // If all the delays are the same, rotate all elevators at once
   // Else, rotate each elevator one by one
   if (delays[0] == delays[1] && delays[0] == delays[2] && delays[0] == delays[3]) {
-    Serial.println("Starting all rotations...");
-    elevatorAllRotate(delays[0]);
+    //Serial.println("Rotating all pods");
+    previousMillis1 = millis();
+    previousMillis2 = millis();
+    previousMillis3 = millis();
+    previousMillis4 = millis();
+
+    rotate1 = delays[0];
+    rotate2 = delays[1];
+    rotate3 = delays[2];
+    rotate4 = delays[3];
   }
   else {
-    Serial.println("Starting individual rotations...");
+    //Serial.println("Rotating one pod");
     if (delays[0] > 0) {
-      elevatorOneRotate(delays[0]);
+      previousMillis1 = millis();
+      rotate1 = delays[0];
     }
     if (delays[1] > 0) {
-      elevatorTwoRotate(delays[1]);
+      previousMillis2 = millis();
+      rotate2 = delays[1];
     }
     if (delays[2] > 0) {
-      elevatorThreeRotate(delays[2]);
+      previousMillis3 = millis();
+      rotate3 = delays[2];
     }
     if (delays[3] > 0) {
-      elevatorFourRotate(delays[3]);
+      previousMillis4 = millis();
+      rotate4 = delays[3];
     }
   }
 
   // Debugging purposes
-  Serial.print("Input: ");
-  Serial.println(input);
-  Serial.print("Delay one: ");
-  Serial.println(delays[0]);
-  Serial.print("Delay two: ");
-  Serial.println(delays[1]);
-  Serial.print("Delay three: ");
-  Serial.println(delays[2]);
-  Serial.print("Delay four: ");
-  Serial.println(delays[3]);
-}
-
-// Force all elevators to rotate for t seconds
-void elevatorAllRotate(int t) {
-  digitalWrite(RELAY_1, LOW);
-  digitalWrite(RELAY_2, LOW);
-  digitalWrite(RELAY_3, LOW);
-  digitalWrite(RELAY_4, LOW);
-  delay(t * 1000);
-  Serial.println("Completed all rotations!");
-}
-
-// Force Elevator 1 to rotate for t seconds
-void elevatorOneRotate(int t) {
-  digitalWrite(RELAY_1, LOW);
-  delay(t * 1000);
-  Serial.println("Completed elevator one rotation!");
-}
-
-// Force Elevator 2 to rotate for t seconds
-void elevatorTwoRotate(int t) {
-  digitalWrite(RELAY_2, LOW);
-  delay(t * 1000);
-  Serial.println("Completed elevator two rotation!");
-}
-
-// Force Elevator 3 to rotate for t seconds
-void elevatorThreeRotate(int t) {
-  digitalWrite(RELAY_3, LOW);
-  delay(t * 1000);
-  Serial.println("Completed elevator three rotation!");
-}
-
-// Force Elevator 4 to rotate for t seconds
-void elevatorFourRotate(int t) {
-  digitalWrite(RELAY_4, LOW);
-  delay(t * 1000);
-  Serial.println("Completed elevator four rotation!");
+  //Serial.print("Input: ");
+  //Serial.println(input);
+  //Serial.print("Delay one: ");
+  //Serial.println(delays[0]);
+  //Serial.print("Delay two: ");
+  //Serial.println(delays[1]);
+  //Serial.print("Delay three: ");
+  //Serial.println(delays[2]);
+  //Serial.print("Delay four: ");
+  //Serial.println(delays[3]);
 }
 
 // Sensor logic for Elevator 1
 void elevatorOne() {
-  int magnetState = digitalRead(MAGNET_1);
-  if (magnetState == HIGH) {
-    digitalWrite(RELAY_1, LOW);
-  } else {
+  if(emergencyStop) {
     digitalWrite(RELAY_1, HIGH);
+    return;
+  }
+  else {
+    int magnetState = digitalRead(MAGNET_1);
+    if (magnetState == HIGH) {
+      digitalWrite(RELAY_1, LOW);
+    }
+    else {  
+      if (currentMillis - previousMillis1 <= 1000 * rotate1) {
+        digitalWrite(RELAY_1, LOW);
+      }
+      else {
+        digitalWrite(RELAY_1, HIGH);
+      }
+    }
   }
 }
 
 // Sensor logic for Elevator 2
 void elevatorTwo() {
-  int magnetState = digitalRead(MAGNET_2);
-  if (magnetState == HIGH) {
-    digitalWrite(RELAY_2, LOW);
-  } else {
+  if(emergencyStop) {
     digitalWrite(RELAY_2, HIGH);
+    return;
+  }
+  else {
+    int magnetState = digitalRead(MAGNET_2);
+    if (magnetState == HIGH) {
+      digitalWrite(RELAY_2, LOW);
+    }
+    else {
+      if (currentMillis - previousMillis2 <= 1000 * rotate2) {
+        digitalWrite(RELAY_2, LOW);
+      }
+      else {
+        digitalWrite(RELAY_2, HIGH);
+      }
+    }
   }
 }
 
 // Sensor logic for Elevator 3
 void elevatorThree() {
-  int magnetState = digitalRead(MAGNET_3);
-  if (magnetState == HIGH) {
-    digitalWrite(RELAY_3, LOW);
-  } else {
+  if(emergencyStop) {
     digitalWrite(RELAY_3, HIGH);
+    return;
+  }
+  else {
+    int magnetState = digitalRead(MAGNET_3);
+    if (magnetState == HIGH) {
+      digitalWrite(RELAY_3, LOW);
+    }
+    else {
+      if (currentMillis - previousMillis3 <= 1000 * rotate3) {
+        digitalWrite(RELAY_3, LOW);
+      }
+      else {
+        digitalWrite(RELAY_3, HIGH);
+      }
+    }
   }
 }
 
 // Sensor logic for Elevator 4
 void elevatorFour() {
-  int magnetState = digitalRead(MAGNET_4);
-  if (magnetState == HIGH) {
-    digitalWrite(RELAY_4, LOW);
-  } else {
+  if(emergencyStop) {
     digitalWrite(RELAY_4, HIGH);
+    return;
+  }
+  else {
+    int magnetState = digitalRead(MAGNET_4);
+    if (magnetState == HIGH) {
+      digitalWrite(RELAY_4, LOW);
+    }
+    else {
+      if (currentMillis - previousMillis4 <= 1000 * rotate4) {
+        digitalWrite(RELAY_4, LOW);
+      }
+      else {
+        digitalWrite(RELAY_4, HIGH);
+      }
+    }
   }
 }
