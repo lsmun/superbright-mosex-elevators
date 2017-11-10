@@ -91,16 +91,16 @@ String readInput() {
 // Parse serial input
 void parseInput() {
   // Stop elevators if input is "stop" by setting emergencyStop to true
-  if (inputString == "stop") {
+  if (inputString == "stop\n") {
     //Serial.println("Stopping");
     emergencyStop = true;
   }
   // Start elevators again if input is "start"
-  else if (inputString == "start") {
+  else if (inputString == "start\n") {
     //Serial.println("Starting");
     emergencyStop = false;
   }
-  else if (inputString == "ping") {
+  else if (inputString == "ping\n") {
     Serial.println("PONG");
   }
   // Rotate elevators based on input in seconds
@@ -162,7 +162,7 @@ void rotate(String input) {
 
   // Debugging purposes
   //Serial.print("Input: ");
-  //Serial.println(input);
+  //Serial.print(input);
   //Serial.print("Delay one: ");
   //Serial.println(delays[0]);
   //Serial.print("Delay two: ");
@@ -175,16 +175,18 @@ void rotate(String input) {
 
 // Sensor logic for Elevator 1
 void elevatorOne() {
+  // if emergencyStop == true then stop rotation
   if(emergencyStop) {
     digitalWrite(RELAY_1, HIGH);
-    return;
   }
   else {
     int magnetState = digitalRead(MAGNET_1);
+    // if magnets are not touching, rotate
     if (magnetState == HIGH) {
       digitalWrite(RELAY_1, LOW);
     }
-    else {  
+    else {
+      // if timer has been set, rotate until timer expires
       if (currentMillis - previousMillis1 <= 1000 * rotate1) {
         digitalWrite(RELAY_1, LOW);
       }
@@ -199,7 +201,6 @@ void elevatorOne() {
 void elevatorTwo() {
   if(emergencyStop) {
     digitalWrite(RELAY_2, HIGH);
-    return;
   }
   else {
     int magnetState = digitalRead(MAGNET_2);
@@ -221,7 +222,6 @@ void elevatorTwo() {
 void elevatorThree() {
   if(emergencyStop) {
     digitalWrite(RELAY_3, HIGH);
-    return;
   }
   else {
     int magnetState = digitalRead(MAGNET_3);
@@ -243,7 +243,6 @@ void elevatorThree() {
 void elevatorFour() {
   if(emergencyStop) {
     digitalWrite(RELAY_4, HIGH);
-    return;
   }
   else {
     int magnetState = digitalRead(MAGNET_4);
